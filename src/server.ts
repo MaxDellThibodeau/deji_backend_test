@@ -1,3 +1,8 @@
+import dotenv from 'dotenv'
+
+// Load environment variables first
+dotenv.config()
+
 import express from 'express'
 import cors from 'cors'  
 import helmet from 'helmet'
@@ -7,6 +12,7 @@ import { Server } from 'socket.io'
 // Import API routes
 import spotifyRoutes from './routes/music/spotify'
 import createIntentRoutes from './routes/payments/create-intent'
+import tokenRoutes from './routes/payments/tokens'
 
 const app = express()
 const server = createServer(app)
@@ -40,6 +46,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/music/spotify', spotifyRoutes)
 app.use('/api/payments/create-intent', createIntentRoutes)
+app.use('/api/payments/tokens', tokenRoutes)
 
 // Default API route
 app.get('/api', (req, res) => {

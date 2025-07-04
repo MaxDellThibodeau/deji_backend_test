@@ -16,15 +16,12 @@ router.post('/', async (req: Request, res: Response) => {
       })
     }
 
-    console.log('[API] Creating payment intent:', {
-      amount,
-      userId,
+    // Log request without sensitive details
+    console.log('[API] Payment intent requested:', {
       tokenAmount,
-      eventId,
       eventName,
       ticketType,
-      quantity,
-      unitPrice
+      quantity
     })
 
     // For now, return a mock response until we copy the Stripe service
@@ -37,7 +34,7 @@ router.post('/', async (req: Request, res: Response) => {
     })
 
   } catch (error) {
-    console.error('Error creating payment intent:', error)
+    console.error('Error creating payment intent')
     return res.status(500).json({
       error: 'Failed to create payment intent'
     })
