@@ -1,0 +1,446 @@
+{
+  "info": {
+    "name": "DJEI Token API",
+    "description": "API testing collection for DJEI token purchase and bidding endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string",
+      "description": "Get this from running: node scripts/get-test-token.js <email> <password>"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Test if the server is running (no auth required)"
+      },
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "Get Token Balance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/balance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "balance"]
+        },
+        "description": "Get the current user's token balance"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/tokens/balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "tokens", "balance"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [],
+          "cookie": [],
+          "body": "{\n    \"balance\": 150\n}"
+        }
+      ]
+    },
+    {
+      "name": "Purchase Tokens - Valid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"amount\": 100,\n    \"packageType\": \"100\",\n    \"paymentIntentId\": \"pi_test_{{$randomUUID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/purchase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "purchase"]
+        },
+        "description": "Purchase 100 tokens with valid data"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 100,\n    \"packageType\": \"100\",\n    \"paymentIntentId\": \"pi_test_123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/tokens/purchase",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "tokens", "purchase"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"newBalance\": 250,\n    \"amountAdded\": 100\n}"
+        }
+      ]
+    },
+    {
+      "name": "Purchase Tokens - Invalid Amount",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"amount\": -50,\n    \"packageType\": \"50\",\n    \"paymentIntentId\": \"pi_test_invalid_{{$randomUUID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/purchase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "purchase"]
+        },
+        "description": "Test validation with negative amount (should fail)"
+      },
+      "response": [
+        {
+          "name": "Validation Error",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": -50,\n    \"packageType\": \"50\",\n    \"paymentIntentId\": \"pi_test_invalid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/tokens/purchase",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "tokens", "purchase"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [],
+          "cookie": [],
+          "body": "{\n    \"error\": \"Invalid amount. Must be positive.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Purchase Tokens - Missing Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"amount\": 100\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/purchase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "purchase"]
+        },
+        "description": "Test validation with missing required fields (should fail)"
+      }
+    },
+    {
+      "name": "Place Song Bid - Valid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"songId\": \"song_test_{{$randomUUID}}\",\n    \"bidAmount\": 25,\n    \"eventId\": \"event_test_123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/bid",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "bid"]
+        },
+        "description": "Place a valid song bid"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"songId\": \"song_test_123\",\n    \"bidAmount\": 25,\n    \"eventId\": \"event_test_123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/tokens/bid",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "tokens", "bid"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"newBalance\": 125,\n    \"bidAmount\": 25,\n    \"songId\": \"song_test_123\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Place Song Bid - Insufficient Tokens",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"songId\": \"song_test_insufficient_{{$randomUUID}}\",\n    \"bidAmount\": 99999,\n    \"eventId\": \"event_test_123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/bid",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "bid"]
+        },
+        "description": "Test bidding with insufficient tokens (should fail)"
+      },
+      "response": [
+        {
+          "name": "Insufficient Tokens Error",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"songId\": \"song_test_999\",\n    \"bidAmount\": 99999,\n    \"eventId\": \"event_test_123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/tokens/bid",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "tokens", "bid"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [],
+          "cookie": [],
+          "body": "{\n    \"error\": \"Insufficient tokens\",\n    \"currentBalance\": 125,\n    \"required\": 99999\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Transaction History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/transactions?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "transactions"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "description": "Get paginated transaction history"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/tokens/transactions?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "tokens", "transactions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [],
+          "cookie": [],
+          "body": "{\n    \"transactions\": [\n        {\n            \"id\": \"tx_123\",\n            \"profile_id\": \"user_456\",\n            \"amount\": 100,\n            \"transaction_type\": \"purchase\",\n            \"description\": \"Token purchase - 100 tokens\",\n            \"created_at\": \"2024-01-15T10:30:00Z\"\n        }\n    ],\n    \"pagination\": {\n        \"page\": 1,\n        \"limit\": 10,\n        \"hasMore\": false\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Unauthorized Request",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/balance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "balance"]
+        },
+        "description": "Test request without authorization header (should fail)"
+      },
+      "auth": {
+        "type": "noauth"
+      },
+      "response": [
+        {
+          "name": "Unauthorized Error",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/tokens/balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "tokens", "balance"]
+            }
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "_postman_previewlanguage": "json",
+          "header": [],
+          "cookie": [],
+          "body": "{\n    \"error\": \"Authorization token required\"\n}"
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// You can add global pre-request scripts here",
+          "console.log('Testing DJEI Token API endpoints...');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script - runs after each request",
+          "pm.test('Response time is less than 5 seconds', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test('Response has valid JSON format', function () {",
+          "    pm.response.to.have.jsonBody();",
+          "});"
+        ]
+      }
+    }
+  ]
+} 

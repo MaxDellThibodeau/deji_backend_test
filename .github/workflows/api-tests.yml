@@ -1,0 +1,120 @@
+name: API Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: 
+      - 'djei-backend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'djei-backend/**'
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    
+    # Service containers for testing
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: djei_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: djei-backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: djei-backend
+      run: npm ci
+
+    - name: Setup environment variables
+      working-directory: djei-backend
+      run: |
+        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+        echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+        echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env
+        echo "TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }}" >> .env
+        echo "TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }}" >> .env
+        echo "NODE_ENV=test" >> .env
+
+    - name: Start server for testing
+      working-directory: djei-backend
+      run: |
+        npm start &
+        sleep 10  # Wait for server to start
+        curl -f http://localhost:3001/health || exit 1
+      env:
+        NODE_ENV: test
+
+    - name: Run cURL-based tests
+      working-directory: djei-backend
+      run: |
+        # Get test token
+        TEST_TOKEN=$(node scripts/get-test-token.js ${{ secrets.TEST_USER_EMAIL }} ${{ secrets.TEST_USER_PASSWORD }} | grep -o 'eyJ[^"]*')
+        
+        # Run API tests
+        chmod +x test-api.sh
+        ./test-api.sh "$TEST_TOKEN"
+
+    - name: Run Jest tests (if available)
+      working-directory: djei-backend
+      run: |
+        if [ -f "package.json" ] && grep -q '"test"' package.json; then
+          npm test
+        else
+          echo "No Jest tests configured, skipping..."
+        fi
+      env:
+        TEST_JWT_TOKEN: ${{ secrets.TEST_JWT_TOKEN }}
+
+    - name: Run Newman/Postman tests
+      working-directory: djei-backend
+      run: |
+        if [ -f "DJEI-Token-API.postman_collection.json" ]; then
+          npx newman run DJEI-Token-API.postman_collection.json \
+            --env-var "baseUrl=http://localhost:3001" \
+            --env-var "jwt_token=${{ secrets.TEST_JWT_TOKEN }}" \
+            --reporters cli,junit \
+            --reporter-junit-export results.xml
+        fi
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: djei-backend/results.xml
+
+    - name: Comment PR with test results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('djei-backend/results.xml')) {
+            const results = fs.readFileSync('djei-backend/results.xml', 'utf8');
+            // Parse and comment results (simplified)
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🧪 API Tests completed! Check the Actions tab for detailed results.'
+            });
+          } 

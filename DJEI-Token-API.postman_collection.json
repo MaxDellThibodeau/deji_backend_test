@@ -1,0 +1,93 @@
+{
+  "info": {
+    "name": "DJEI Token API",
+    "description": "API testing collection for DJEI token purchase and bidding endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "nYQg3IIVDGHYQlndhcCfn4UIbF6Z/Hrhs94ripRygCp3dD1Oke02eWvvucxZ7PATcx+8O48LMHxHhMDDMpqdiQ==",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Token Balance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/balance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "balance"]
+        }
+      }
+    },
+    {
+      "name": "Purchase Tokens",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"amount\": 100,\n    \"packageType\": \"100\",\n    \"paymentIntentId\": \"pi_test_12345\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/purchase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "purchase"]
+        }
+      }
+    },
+    {
+      "name": "Place Song Bid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"songId\": \"song_test_123\",\n    \"bidAmount\": 25,\n    \"eventId\": \"event_test_456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/tokens/bid",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "tokens", "bid"]
+        }
+      }
+    }
+  ]
+} 

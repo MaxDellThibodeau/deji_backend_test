@@ -1,0 +1,35 @@
+name: API Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      working-directory: djei-backend
+      run: npm install
+      
+    - name: Start server
+      working-directory: djei-backend
+      run: |
+        npm start &
+        sleep 5
+        
+    - name: Run API tests
+      working-directory: djei-backend
+      run: |
+        chmod +x test-api.sh
+        ./test-api.sh ${{ secrets.TEST_JWT_TOKEN }} 
