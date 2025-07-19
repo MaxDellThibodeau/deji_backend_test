@@ -45,7 +45,7 @@ async function getSpotifyToken(): Promise<string> {
 }
 
 // POST /api/music/spotify/token - Get Spotify access token
-router.post('/token', async (req: Request, res: Response) => {
+const getTokenHandler = async (req: Request, res: Response) => {
   try {
     const token = await getSpotifyToken()
     return res.json({ access_token: token })
@@ -55,7 +55,8 @@ router.post('/token', async (req: Request, res: Response) => {
       error: 'Failed to get Spotify token'
     })
   }
-})
+}
+router.post('/token', getTokenHandler)
 
 // GET /api/music/spotify/search - Search Spotify tracks
 router.get('/search', async (req: Request, res: Response) => {
